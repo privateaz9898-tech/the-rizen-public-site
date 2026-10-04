@@ -9,14 +9,18 @@ let editingId = '';
 let searchTerm = '';
 let watchFilter = { world: '', platform: '', format: '' };
 let phoenixClockTimer;
+let pocketTimerId;
+let pocketTimerEndsAt = 0;
+let torchStream;
+let pocketOrientationActive = false;
 const app = document.querySelector('#app');
 
 const icons = {
-  home: '⌂', watch: '▶', music: '♫', projects: '⌁', shop: '◈', collection: '◇', live: '●', channels: '⌘', owner: '◉', more: '⋯'
+  home: '⌂', watch: '▶', music: '♫', pocket: '▣', projects: '⌁', shop: '◈', collection: '◇', live: '●', channels: '⌘', owner: '◉', more: '⋯'
 };
 const nav = [
   ['home', 'Home', icons.home], ['watch', 'Watch', icons.watch], ['live', 'Live', icons.live], ['music', 'Music', icons.music],
-  ['projects', 'Projects', icons.projects], ['shop', 'Shop', icons.shop], ['collection', 'Collection', icons.collection], ['channels', 'Channels', icons.channels]
+  ['pocket', 'Pocket Tools', icons.pocket], ['projects', 'Projects', icons.projects], ['shop', 'Shop', icons.shop], ['collection', 'Collection', icons.collection], ['channels', 'Channels', icons.channels]
 ];
 const ownerSections = [
   ['overview', 'Studio Overview'], ['project', 'Projects & Tasks'], ['content', 'Watch & Content'], ['music', 'Music Links'],
@@ -88,7 +92,7 @@ function shell(page) {
       </header>
       <main id="main-content">${page}</main>
       <nav class="mobile-nav" aria-label="Mobile navigation">
-        ${[['home','Home'],['watch','Watch'],['projects','Projects'],['shop','Shop'],['more','More']].map(([key,label]) => `<a href="#${key === 'more' ? 'channels' : key}" data-route="${key === 'more' ? 'channels' : key}" class="${current === key ? 'active' : ''}"><span class="m-icon">${icons[key] || icons.more}</span><span>${label}</span></a>`).join('')}
+        ${[['home','Home'],['watch','Watch'],['pocket','Pocket'],['projects','Projects'],['more','More']].map(([key,label]) => `<a href="#${key === 'more' ? 'channels' : key}" data-route="${key === 'more' ? 'channels' : key}" class="${current === key ? 'active' : ''}"><span class="m-icon">${icons[key] || icons.more}</span><span>${label}</span></a>`).join('')}
       </nav>
     </section>
   </div><div class="toast" role="status"></div>`;
@@ -189,6 +193,37 @@ function renderMusic() {
   return `<div class="page"><header class="page-head"><div><p class="eyebrow">Fresh Start / official Spotify support</p><h1>LISTEN IN YOUR LANE</h1><p>Start with the verified Spotify editorial launchpad, then return for more official playlists, albums, tracks and throwbacks.</p></div></header>
   <div class="notice">Spotify controls the current contents of editorial playlists and the available playback controls. This app uses official embeds and external Spotify links only; it does not create a personal playlist or claim every requested artist is included.</div>
   <div class="content-grid">${items.length ? items.map((item) => { const embed = spotifyEmbed(item.url); return `<article class="content-card"><div class="card-kicker">${badge(item.kind || 'Playlist', 'green')}</div><h3 class="card-title">${title(item.title)}</h3><p class="card-text">${text(item.description || 'Official link added by the owner.')}</p>${embed ? `<div class="embed-shell"><iframe title="Spotify: ${title(item.title)}" src="${embed}" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe><div class="embed-note">Official Spotify embed</div></div>` : ''}<div class="card-actions">${safeLink(item.url, 'Open in Spotify')}</div></article>`; }).join('') : empty('Music links are not set yet', 'No additional official music selections are available yet. Nothing has been guessed.', '♫')}</div>${footer()}</div>`;
+}
+
+function pocketNote() {
+  try { return localStorage.getItem('rizen-pocket-note-v1') || ''; } catch { return ''; }
+}
+
+function renderPocket() {
+  return `<div class="page pocket-page"><header class="pocket-hero"><div><p class="eyebrow">Adam's Pocket / device-only utilities</p><h1>POCKET COMMAND</h1><p>Fast field tools for your Galaxy and laptop. Notes stay on this device. Camera, compass and screen controls ask for permission only when you press their tool.</p></div><div class="pocket-status"><span class="badge badge-green">Private on this device</span><span class="badge badge-gold">HTTPS tool set</span></div></header>
+  <div class="notice notice-green"><strong>Privacy boundary:</strong> Pocket notes, sensor readings and calculator inputs are not sent to THE RIZEN, GitHub, a calendar, or any other service. Calendar opens through your own signed-in Google account.</div>
+  <section class="section pocket-section"><div class="section-head"><div><p class="eyebrow">Everyday carry</p><h2>Quick tools</h2></div><p class="section-note">Real device tools work best after installing the live site on Android Chrome.</p></div>
+    <div class="pocket-tool-grid">
+      <article class="pocket-tool pocket-light-tool"><span class="pocket-icon">◉</span><h3>Screen light</h3><p>Use a white work light or red low-light screen. Tap anywhere on the light to close it.</p><div class="tool-actions"><button class="button button-primary" data-pocket-action="screen-white">White</button><button class="button button-quiet" data-pocket-action="screen-red">Red</button></div></article>
+      <article class="pocket-tool"><span class="pocket-icon">⌁</span><h3>Flashlight</h3><p>Uses the rear camera torch when your device and browser permit it. No camera stream is stored.</p><div class="tool-actions"><button class="button button-primary" data-pocket-action="torch">Toggle flashlight</button></div></article>
+      <article class="pocket-tool"><span class="pocket-icon">N</span><h3>Compass & level</h3><p>Move your phone in a figure-eight to calibrate. Keep it level for the most reliable reading.</p><div class="sensor-readout"><strong data-pocket-heading>—°</strong><span data-pocket-level>Level ready</span></div><div class="tool-actions"><button class="button button-primary" data-pocket-action="sensors">Start sensors</button></div></article>
+      <article class="pocket-tool"><span class="pocket-icon">◷</span><h3>Timer</h3><p>Simple job, cleaning, cooking or break countdown. It stays on while this Pocket page is open.</p><div class="tool-inline"><label>Minutes <input data-pocket-minutes type="number" min="1" max="720" value="5" inputmode="numeric" /></label><strong data-pocket-timer>05:00</strong></div><div class="tool-actions"><button class="button button-primary" data-pocket-action="timer-start">Start</button><button class="button button-quiet" data-pocket-action="timer-pause">Pause</button><button class="button button-quiet" data-pocket-action="timer-reset">Reset</button></div></article>
+    </div>
+  </section>
+  <section class="section pocket-section"><div class="section-head"><div><p class="eyebrow">Work calculator kit</p><h2>Floor & dilution math</h2></div><p class="section-note">Enter the coverage rate printed on your actual product label.</p></div>
+    <div class="pocket-calc-grid">
+      <article class="pocket-tool"><span class="pocket-icon">▥</span><h3>Square footage & finish</h3><div class="calc-fields"><label>Length (ft)<input data-pocket-calc-input="floor-length" type="number" min="0" step="0.1" inputmode="decimal" /></label><label>Width (ft)<input data-pocket-calc-input="floor-width" type="number" min="0" step="0.1" inputmode="decimal" /></label><label>Coverage / gallon<input data-pocket-calc-input="floor-coverage" type="number" min="0" step="1" inputmode="decimal" placeholder="From label" /></label></div><p class="tool-output" data-pocket-floor-output>Enter length and width to calculate square feet.</p></article>
+      <article class="pocket-tool"><span class="pocket-icon">◌</span><h3>Dilution calculator</h3><div class="calc-fields"><label>Concentrate oz / gal<input data-pocket-calc-input="dilution-oz" type="number" min="0" step="0.1" inputmode="decimal" /></label><label>Mixed gallons<input data-pocket-calc-input="dilution-gallons" type="number" min="0" step="0.1" inputmode="decimal" /></label></div><p class="tool-output" data-pocket-dilution-output>Enter the label ratio and number of gallons.</p></article>
+      <article class="pocket-tool"><span class="pocket-icon">☼</span><h3>Phoenix heat check</h3><p>Live conditions are available on Home. Use the heat check before field work and bring water during high-heat conditions.</p><div class="tool-actions"><a class="button button-primary" href="#home" data-route="home">Open live weather</a></div></article>
+    </div>
+  </section>
+  <section class="section pocket-section"><div class="section-head"><div><p class="eyebrow">Private organizer</p><h2>Notes & calendar</h2></div></div>
+    <div class="pocket-calc-grid">
+      <article class="pocket-tool"><span class="pocket-icon">✎</span><h3>Quick note</h3><textarea id="pocket-note" class="pocket-note" placeholder="Write a private note for this device…">${text(pocketNote())}</textarea><p class="micro">Saved only in this browser’s local storage. Clear browser data to remove it.</p><div class="tool-actions"><button class="button button-primary" data-pocket-action="note-save">Save note on this device</button></div></article>
+      <article class="pocket-tool"><span class="pocket-icon">▦</span><h3>Private calendar</h3><p>Open Google Calendar in your own signed-in account. Your calendar ID and appointment details are never placed in this public site.</p><div class="tool-actions">${safeLink('https://calendar.google.com/calendar/u/0/r', 'Open Google Calendar')}${safeLink('https://calendar.google.com/calendar/r/eventedit', 'Add appointment')}</div></article>
+      <article class="pocket-tool"><span class="pocket-icon">♫</span><h3>Music on the move</h3><p>Spotify stays the current official listening option. Locked-screen playback requires music you own or have rights to host; no tracks have been assumed.</p><div class="tool-actions"><a class="button button-primary" href="#music" data-route="music">Open music</a></div></article>
+    </div>
+  </section>${footer()}</div>`;
 }
 
 function renderProjects() {
@@ -296,6 +331,7 @@ function pageForRoute() {
   if (current.startsWith('world/')) return renderWorld(current.split('/')[1]);
   if (current === 'watch') return renderWatch();
   if (current === 'music') return renderMusic();
+  if (current === 'pocket') return renderPocket();
   if (current === 'projects') return renderProjects();
   if (current === 'shop') return renderShop();
   if (current === 'collection') return renderCollection();
@@ -337,8 +373,10 @@ async function hydratePhoenixBriefing() {
 
 function render() {
   if (phoenixClockTimer) { window.clearInterval(phoenixClockTimer); phoenixClockTimer = undefined; }
+  if (routeName() !== 'pocket') { if (pocketTimerId) { window.clearInterval(pocketTimerId); pocketTimerId = undefined; } stopTorch(); }
   app.innerHTML = shell(pageForRoute());
   if (routeName() === 'home') hydratePhoenixBriefing();
+  if (routeName() === 'pocket') { resetPocketTimer(); updatePocketCalculators(); }
 }
 
 async function handleRecordForm(form) {
@@ -378,10 +416,109 @@ async function handleSubmit(event) {
   }
 }
 
+function setScreenLight(color) {
+  document.querySelector('#pocket-screen-light')?.remove();
+  if (!color) return;
+  const overlay = document.createElement('button');
+  overlay.id = 'pocket-screen-light'; overlay.className = `screen-light screen-light-${color}`;
+  overlay.type = 'button'; overlay.title = 'Tap to close screen light'; overlay.setAttribute('aria-label', 'Tap to close screen light');
+  overlay.addEventListener('click', () => overlay.remove()); document.body.append(overlay);
+}
+
+function stopTorch() {
+  if (!torchStream) return;
+  torchStream.getTracks().forEach((track) => track.stop()); torchStream = undefined;
+}
+
+async function toggleTorch() {
+  if (torchStream) { stopTorch(); notice('Flashlight turned off.'); return; }
+  if (!navigator.mediaDevices?.getUserMedia) return notice('This browser does not provide the rear-camera flashlight control.', 'error');
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+    const track = stream.getVideoTracks()[0];
+    if (!track?.getCapabilities?.().torch) { stream.getTracks().forEach((item) => item.stop()); return notice('This device camera does not report a flashlight control.', 'error'); }
+    await track.applyConstraints({ advanced: [{ torch: true }] }); torchStream = stream; notice('Flashlight is on. Tap Toggle flashlight to turn it off.');
+  } catch (error) { stopTorch(); notice(`Flashlight unavailable: ${error.message || 'camera permission was not granted'}.`, 'error'); }
+}
+
+function updatePocketSensors(event) {
+  const heading = document.querySelector('[data-pocket-heading]'); const level = document.querySelector('[data-pocket-level]');
+  const rawHeading = Number.isFinite(event.webkitCompassHeading) ? event.webkitCompassHeading : (360 - Number(event.alpha || 0)) % 360;
+  if (heading && Number.isFinite(rawHeading)) heading.textContent = `${Math.round(rawHeading)}°`;
+  if (level && Number.isFinite(event.beta) && Number.isFinite(event.gamma)) level.textContent = `Tilt ${Math.round(event.beta)}° / ${Math.round(event.gamma)}°`;
+}
+
+async function startPocketSensors() {
+  try {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      const permission = await DeviceOrientationEvent.requestPermission();
+      if (permission !== 'granted') return notice('Motion permission was not granted.', 'error');
+    }
+    if (!pocketOrientationActive) {
+      window.addEventListener('deviceorientationabsolute', updatePocketSensors, true);
+      window.addEventListener('deviceorientation', updatePocketSensors, true); pocketOrientationActive = true;
+    }
+    notice('Compass and level sensors are active. Move your phone in a figure-eight to calibrate.');
+  } catch { notice('Compass sensors are unavailable in this browser.', 'error'); }
+}
+
+function formatPocketTimer(seconds) {
+  const safe = Math.max(0, Math.ceil(seconds)); return `${String(Math.floor(safe / 60)).padStart(2, '0')}:${String(safe % 60).padStart(2, '0')}`;
+}
+
+function updatePocketTimer() {
+  const output = document.querySelector('[data-pocket-timer]');
+  const remaining = Math.max(0, (pocketTimerEndsAt - Date.now()) / 1000);
+  if (output) output.textContent = formatPocketTimer(remaining);
+  if (remaining <= 0 && pocketTimerId) { window.clearInterval(pocketTimerId); pocketTimerId = undefined; pocketTimerEndsAt = 0; if (output) notice('Pocket timer finished.'); }
+}
+
+function startPocketTimer() {
+  const input = document.querySelector('[data-pocket-minutes]'); const minutes = Number(input?.value || 0);
+  if (!Number.isFinite(minutes) || minutes <= 0) return notice('Enter a timer between 1 and 720 minutes.', 'error');
+  if (pocketTimerId) window.clearInterval(pocketTimerId);
+  pocketTimerEndsAt = Date.now() + Math.min(minutes, 720) * 60000; updatePocketTimer(); pocketTimerId = window.setInterval(updatePocketTimer, 1000); notice('Pocket timer started.');
+}
+
+function pausePocketTimer() {
+  if (!pocketTimerId) return;
+  const remaining = Math.max(0, (pocketTimerEndsAt - Date.now()) / 1000); window.clearInterval(pocketTimerId); pocketTimerId = undefined; pocketTimerEndsAt = Date.now() + remaining * 1000; notice('Pocket timer paused.');
+}
+
+function resetPocketTimer() {
+  if (pocketTimerId) window.clearInterval(pocketTimerId); pocketTimerId = undefined; pocketTimerEndsAt = 0;
+  const minutes = Number(document.querySelector('[data-pocket-minutes]')?.value || 5); const output = document.querySelector('[data-pocket-timer]'); if (output) output.textContent = formatPocketTimer(Math.max(1, minutes) * 60);
+}
+
+function updatePocketCalculators() {
+  const value = (name) => Number(document.querySelector(`[data-pocket-calc-input="${name}"]`)?.value || 0);
+  const length = value('floor-length'); const width = value('floor-width'); const coverage = value('floor-coverage'); const floorOutput = document.querySelector('[data-pocket-floor-output]');
+  if (floorOutput) {
+    const squareFeet = length > 0 && width > 0 ? length * width : 0;
+    floorOutput.textContent = squareFeet ? `${squareFeet.toFixed(1)} sq ft${coverage > 0 ? ` · ${Math.ceil(squareFeet / coverage * 100) / 100} gallons at your entered coverage rate` : ' · enter coverage per gallon from the product label.'}` : 'Enter length and width to calculate square feet.';
+  }
+  const ounces = value('dilution-oz'); const gallons = value('dilution-gallons'); const dilutionOutput = document.querySelector('[data-pocket-dilution-output]');
+  if (dilutionOutput) dilutionOutput.textContent = ounces > 0 && gallons > 0 ? `${(ounces * gallons).toFixed(1)} oz concentrate for ${gallons} mixed gallon${gallons === 1 ? '' : 's'}.` : 'Enter the label ratio and number of gallons.';
+}
+
+async function handlePocketAction(action) {
+  if (action === 'screen-white') return setScreenLight('white');
+  if (action === 'screen-red') return setScreenLight('red');
+  if (action === 'torch') return toggleTorch();
+  if (action === 'sensors') return startPocketSensors();
+  if (action === 'timer-start') return startPocketTimer();
+  if (action === 'timer-pause') return pausePocketTimer();
+  if (action === 'timer-reset') return resetPocketTimer();
+  if (action === 'note-save') {
+    try { localStorage.setItem('rizen-pocket-note-v1', document.querySelector('#pocket-note')?.value || ''); notice('Pocket note saved on this device.'); } catch { notice('This browser did not allow local note storage.', 'error'); }
+  }
+}
+
 async function handleClick(event) {
-  const target = event.target.closest('[data-route], [data-owner-section], [data-edit], [data-delete], [data-new-record], [data-cancel-edit], [data-logout], [data-export], [data-reset], [data-clear-watch]');
+  const target = event.target.closest('[data-route], [data-pocket-action], [data-owner-section], [data-edit], [data-delete], [data-new-record], [data-cancel-edit], [data-logout], [data-export], [data-reset], [data-clear-watch]');
   if (!target) return;
   if (target.dataset.route) { event.preventDefault(); go(target.dataset.route); return; }
+  if (target.dataset.pocketAction) { await handlePocketAction(target.dataset.pocketAction); return; }
   if (target.dataset.ownerSection) { ownerSection = target.dataset.ownerSection; editingId = ''; render(); return; }
   if (target.dataset.edit) { editingId = target.dataset.edit; render(); return; }
   if (target.dataset.newRecord) { editingId = ''; ownerSection = target.dataset.newRecord; render(); return; }
@@ -407,6 +544,7 @@ async function handleChange(event) {
   const input = event.target;
   if (input.matches('[data-setup-id]')) { const item = state.setup.find((entry) => entry.id === input.dataset.setupId); if (item) { item.complete = input.checked; await save(); notice('Setup checklist updated.'); } return; }
   if (input.matches('[data-watch-filter]')) { watchFilter[input.dataset.watchFilter] = input.value; render(); return; }
+  if (input.matches('[data-pocket-calc-input]')) { updatePocketCalculators(); return; }
   if (input.id === 'import-file') {
     const file = input.files?.[0]; if (!file) return;
     try { const imported = JSON.parse(await file.text()); if (!imported?.state?.records || !imported?.state?.brand) throw new Error('Unexpected backup format'); state = imported.state; await save(); setOwnerSession(false); ownerSection = 'overview'; editingId = ''; notice('Backup imported. Unlock Owner Studio with its original passphrase.'); render(); } catch { notice('Import failed. Choose a valid THE RIZEN local backup JSON file.', 'error'); }
@@ -415,6 +553,7 @@ async function handleChange(event) {
 
 function handleInput(event) {
   if (event.target.id === 'global-search') searchTerm = event.target.value;
+  if (event.target.matches('[data-pocket-calc-input]')) updatePocketCalculators();
 }
 function handleKeydown(event) {
   if (event.target.id === 'global-search' && event.key === 'Enter') { event.preventDefault(); go('watch'); }
@@ -423,7 +562,7 @@ function handleKeydown(event) {
 async function boot() {
   state = await ensureState();
   render();
-  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./service-worker.js?v=public3').catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./service-worker.js?v=public4').catch(() => {});
 }
 
 document.addEventListener('submit', (event) => { handleSubmit(event).catch((error) => notice(`Save failed: ${error.message}`, 'error')); });
@@ -432,4 +571,5 @@ document.addEventListener('change', (event) => { handleChange(event).catch((erro
 document.addEventListener('input', handleInput);
 document.addEventListener('keydown', handleKeydown);
 window.addEventListener('hashchange', () => { if (!location.hash) location.hash = 'home'; render(); });
+window.addEventListener('beforeunload', stopTorch);
 boot().catch((error) => { app.innerHTML = `<main class="page"><section class="auth-card"><h1>LOCAL STORAGE ERROR</h1><p>${escapeHtml(error.message)}</p><p>Try opening the preview in a modern browser with IndexedDB enabled.</p></section></main>`; });

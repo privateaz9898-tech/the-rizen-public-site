@@ -1,11 +1,11 @@
 {
-  "name": "THE RIZEN — Local Preview",
-  "short_name": "THE RIZEN",
-  "description": "Private local creator command center for ADAN UNFILTERED.",
-  "start_url": "./index.html",
+  "name": "THE RIZEN / Adam's Pocket",
+  "short_name": "RIZEN Pocket",
+  "description": "Phoenix creator hub and device-only pocket utility kit for ADAN UNFILTERED.",
+  "start_url": "./index.html#pocket",
   "display": "standalone",
-  "background_color": "#09090B",
-  "theme_color": "#ED2438",
+  "background_color": "#010000",
+  "theme_color": "#56155D",
   "icons": [
     {"src": "./assets/rizen-crown.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
   ]

@@ -1,4 +1,4 @@
-const CACHE = 'the-rizen-public-v3';
+const CACHE = 'the-rizen-public-v4';
 const SHELL = ['./', './index.html', './styles.css', './app.js', './db.js', './manifest.webmanifest', './assets/rizen-crown.svg', './assets/rizen-reference-color-mural.png'];
 
 self.addEventListener('install', (event) => event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL))));

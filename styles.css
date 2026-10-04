@@ -227,6 +227,39 @@ tr:last-child td { border-bottom: 0; }
 .toast { position: fixed; z-index: 50; right: 1rem; bottom: 1rem; max-width: min(360px, calc(100vw - 2rem)); padding: .85rem 1rem; border: 1px solid #41694c; border-radius: 9px; background: #16281b; box-shadow: var(--shadow); color: #dcfbe4; font-size: .8rem; font-weight: 800; transform: translateY(130%); transition: transform .2s ease; }
 .toast.show { transform: translateY(0); }
 .mobile-nav { display: none; }
+.pocket-page { padding-bottom: 1rem; }
+.pocket-hero { position: relative; display: flex; align-items: end; justify-content: space-between; gap: 1rem; overflow: hidden; min-height: 260px; padding: clamp(1.2rem, 4vw, 2.8rem); border: 1px solid rgba(80,154,124,.64); border-radius: 18px; background: linear-gradient(100deg, rgba(1,0,0,.92), rgba(29,21,93,.72) 55%, rgba(80,154,124,.16)), url('./assets/rizen-reference-color-mural.png') center/cover; box-shadow: var(--shadow); }
+.pocket-hero::after { content: 'POCKET'; position: absolute; right: -.03em; bottom: -.2em; color: rgba(254,238,208,.06); font-family: Impact, Haettenschweiler, sans-serif; font-size: clamp(5rem, 16vw, 13rem); line-height: .8; letter-spacing: .02em; pointer-events: none; }
+.pocket-hero > * { position: relative; z-index: 1; }
+.pocket-hero h1 { color: var(--graffiti-cream); }
+.pocket-hero p { max-width: 680px; color: #eee4dc; }
+.pocket-status { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .45rem; }
+.pocket-section { margin-top: 2.2rem; }
+.pocket-tool-grid, .pocket-calc-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.pocket-tool { position: relative; min-height: 228px; display: flex; flex-direction: column; overflow: hidden; padding: 1.1rem; border: 1px solid rgba(254,238,208,.2); border-radius: 14px; background: linear-gradient(150deg, rgba(30,20,51,.93), rgba(10,11,15,.96)); box-shadow: 0 10px 30px rgba(0,0,0,.18); }
+.pocket-tool::after { content: ''; position: absolute; right: -43px; bottom: -45px; width: 150px; height: 150px; border: 1px solid rgba(80,154,124,.36); border-radius: 50%; box-shadow: 0 0 32px rgba(80,154,124,.12); }
+.pocket-tool > * { position: relative; z-index: 1; }
+.pocket-tool h3 { margin: .72rem 0 .4rem; color: var(--graffiti-cream); font-size: 1.08rem; }
+.pocket-tool p { margin-bottom: .75rem; font-size: .8rem; }
+.pocket-icon { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid rgba(202,78,29,.75); border-radius: 9px; background: rgba(202,78,29,.17); color: #ffd2b2; font-family: Impact, sans-serif; font-size: 1.22rem; box-shadow: 0 0 18px rgba(202,78,29,.15); }
+.pocket-light-tool { border-color: rgba(202,78,29,.55); }
+.tool-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: auto; }
+.tool-inline { display: flex; align-items: center; justify-content: space-between; gap: .65rem; margin-top: auto; padding: .6rem; border: 1px solid rgba(80,154,124,.3); border-radius: 8px; background: rgba(1,0,0,.26); }
+.tool-inline label, .calc-fields label { display: grid; gap: .28rem; color: #dcd5d2; font-size: .67rem; font-weight: 800; }
+.tool-inline input, .calc-fields input, .pocket-note { border: 1px solid rgba(254,238,208,.25); border-radius: 6px; background: rgba(1,0,0,.38); color: var(--text); }
+.tool-inline input { width: 72px; min-height: 34px; padding: .35rem; }
+.tool-inline strong { color: #fff4d8; font-family: "Cascadia Code", Consolas, monospace; font-size: 1.15rem; }
+.sensor-readout { display: grid; gap: .18rem; margin-top: auto; padding: .7rem; border: 1px solid rgba(80,154,124,.35); border-radius: 8px; background: rgba(1,0,0,.3); }
+.sensor-readout strong { color: #b9f1d5; font-family: "Cascadia Code", Consolas, monospace; font-size: 1.4rem; }
+.sensor-readout span { color: #d2d9d4; font-size: .72rem; }
+.calc-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .58rem; margin-top: auto; }
+.calc-fields label:last-child { grid-column: 1 / -1; }
+.calc-fields input { width: 100%; min-height: 36px; padding: .45rem .55rem; }
+.tool-output { min-height: 45px; margin: .75rem 0 0 !important; color: #c8efd9 !important; font-size: .76rem !important; font-weight: 800; }
+.pocket-note { width: 100%; min-height: 100px; margin-top: auto; padding: .65rem; resize: vertical; }
+.screen-light { position: fixed; z-index: 100; inset: 0; width: 100vw; height: 100vh; border: 0; cursor: pointer; }
+.screen-light-white { background: #fff; }
+.screen-light-red { background: #bd061d; }
 .footer { margin-top: 3.5rem; padding: 1.25rem 0 1rem; border-top: 1px solid var(--line); color: var(--dim); font-size: .72rem; }
 .footer strong { color: #e7e7eb; letter-spacing: .08em; }
 .footer-row { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
@@ -235,6 +268,7 @@ tr:last-child td { border-bottom: 0; }
   .world-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .content-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .phoenix-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pocket-tool-grid, .pocket-calc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 920px) {
   .shell { grid-template-columns: 1fr; padding-bottom: 68px; }
@@ -267,7 +301,7 @@ tr:last-child td { border-bottom: 0; }
   .hero-crown { width: 70px; }
   .hero h1 { font-size: 3.25rem; }
   .hero-description { font-size: .9rem; }
-  .world-grid, .content-grid, .record-grid, .phoenix-grid { grid-template-columns: 1fr; }
+  .world-grid, .content-grid, .record-grid, .phoenix-grid, .pocket-tool-grid, .pocket-calc-grid { grid-template-columns: 1fr; }
   .split-grid { grid-template-columns: 1fr; }
   .stats-row { grid-template-columns: repeat(2, 1fr); }
   .field-grid { grid-template-columns: 1fr; }
@@ -275,6 +309,8 @@ tr:last-child td { border-bottom: 0; }
   .page-head { align-items: start; flex-direction: column; }
   .owner-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .filter-bar > * { flex-basis: 100%; }
+  .pocket-hero { min-height: 300px; align-items: flex-start; flex-direction: column; }
+  .pocket-status { justify-content: flex-start; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
