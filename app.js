@@ -13,6 +13,7 @@ let pocketTimerId;
 let pocketTimerEndsAt = 0;
 let torchStream;
 let pocketOrientationActive = false;
+let pocketLocation = null;
 const app = document.querySelector('#app');
 
 const icons = {
@@ -199,6 +200,35 @@ function pocketNote() {
   try { return localStorage.getItem('rizen-pocket-note-v1') || ''; } catch { return ''; }
 }
 
+function pocketFavoriteList() {
+  try { return localStorage.getItem('rizen-pocket-google-maps-list-v1') || ''; } catch { return ''; }
+}
+
+function isGoogleMapsUrl(value) {
+  if (!isHttpUrl(value)) return false;
+  try {
+    const host = new URL(value).hostname.toLowerCase();
+    return host === 'maps.app.goo.gl' || host === 'maps.google.com' || host.endsWith('.google.com');
+  } catch { return false; }
+}
+
+function openGoogleMaps(url) {
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+function updatePocketPlaceStatus() {
+  const status = document.querySelector('[data-pocket-place-status]');
+  const detail = document.querySelector('[data-pocket-place-detail]');
+  if (!status || !detail) return;
+  if (!pocketLocation) {
+    status.textContent = 'Location not requested';
+    detail.textContent = 'Allow location only when you want Google Maps to start nearby.';
+    return;
+  }
+  status.textContent = 'Location ready for this session';
+  detail.textContent = `${pocketLocation.latitude.toFixed(5)}, ${pocketLocation.longitude.toFixed(5)} · not sent to THE RIZEN.`;
+}
+
 function renderPocket() {
   return `<div class="page pocket-page"><header class="pocket-hero"><div><p class="eyebrow">Adam's Pocket / device-only utilities</p><h1>POCKET COMMAND</h1><p>Fast field tools for your Galaxy and laptop. Notes stay on this device. Camera, compass and screen controls ask for permission only when you press their tool.</p></div><div class="pocket-status"><span class="badge badge-green">Private on this device</span><span class="badge badge-gold">HTTPS tool set</span></div></header>
   <div class="notice notice-green"><strong>Privacy boundary:</strong> Pocket notes, sensor readings and calculator inputs are not sent to THE RIZEN, GitHub, a calendar, or any other service. Calendar opens through your own signed-in Google account.</div>
@@ -208,6 +238,13 @@ function renderPocket() {
       <article class="pocket-tool"><span class="pocket-icon">⌁</span><h3>Flashlight</h3><p>Uses the rear camera torch when your device and browser permit it. No camera stream is stored.</p><div class="tool-actions"><button class="button button-primary" data-pocket-action="torch">Toggle flashlight</button></div></article>
       <article class="pocket-tool"><span class="pocket-icon">N</span><h3>Compass & level</h3><p>Move your phone in a figure-eight to calibrate. Keep it level for the most reliable reading.</p><div class="sensor-readout"><strong data-pocket-heading>—°</strong><span data-pocket-level>Level ready</span></div><div class="tool-actions"><button class="button button-primary" data-pocket-action="sensors">Start sensors</button></div></article>
       <article class="pocket-tool"><span class="pocket-icon">◷</span><h3>Timer</h3><p>Simple job, cleaning, cooking or break countdown. It stays on while this Pocket page is open.</p><div class="tool-inline"><label>Minutes <input data-pocket-minutes type="number" min="1" max="720" value="5" inputmode="numeric" /></label><strong data-pocket-timer>05:00</strong></div><div class="tool-actions"><button class="button button-primary" data-pocket-action="timer-start">Start</button><button class="button button-quiet" data-pocket-action="timer-pause">Pause</button><button class="button button-quiet" data-pocket-action="timer-reset">Reset</button></div></article>
+    </div>
+  </section>
+  <section class="section pocket-section pocket-places"><div class="section-head"><div><p class="eyebrow">Personal map handoff</p><h2>Nearby & favorite spots</h2></div><p class="section-note">Location is requested only when you tap the button. Google Maps opens separately in your account.</p></div>
+    <div class="places-stage">
+      <article class="places-location"><span class="pocket-icon">⌖</span><div><h3>Use what is around you</h3><strong data-pocket-place-status>Location not requested</strong><p data-pocket-place-detail>Allow location only when you want Google Maps to start nearby.</p></div><div class="tool-actions"><button class="button button-primary" data-pocket-action="places-location">Use my location</button><a class="button button-quiet" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer">Open Maps</a></div></article>
+      <form class="places-search" data-pocket-places-form><label for="pocket-places-query">Search Google Maps near you</label><div class="places-search-row"><input id="pocket-places-query" type="search" placeholder="Coffee, comic shop, tacos, park…" autocomplete="off" /><button class="button button-primary" type="submit">Search Maps</button></div><p class="micro">Your words and approximate location stay in this browser until Google Maps opens in a separate tab.</p></form>
+      <article class="places-favorites"><span class="pocket-icon">★</span><div><h3>My favorite spots</h3><p>Paste the share link for your own Google Maps saved list. It stays private on this device and opens only when you choose it.</p></div><label for="pocket-favorite-link">Google Maps saved-list link</label><div class="places-search-row"><input id="pocket-favorite-link" type="url" inputmode="url" placeholder="https://maps.app.goo.gl/..." value="${text(pocketFavoriteList())}" /><button class="button button-quiet" type="button" data-pocket-action="favorite-save">Save on this device</button><button class="button button-primary" type="button" data-pocket-action="favorite-open">Open my spots</button></div></article>
     </div>
   </section>
   <section class="section pocket-section"><div class="section-head"><div><p class="eyebrow">Work calculator kit</p><h2>Floor & dilution math</h2></div><p class="section-note">Enter the coverage rate printed on your actual product label.</p></div>
@@ -376,7 +413,7 @@ function render() {
   if (routeName() !== 'pocket') { if (pocketTimerId) { window.clearInterval(pocketTimerId); pocketTimerId = undefined; } stopTorch(); }
   app.innerHTML = shell(pageForRoute());
   if (routeName() === 'home') hydratePhoenixBriefing();
-  if (routeName() === 'pocket') { resetPocketTimer(); updatePocketCalculators(); }
+  if (routeName() === 'pocket') { resetPocketTimer(); updatePocketCalculators(); updatePocketPlaceStatus(); }
 }
 
 async function handleRecordForm(form) {
@@ -410,6 +447,7 @@ async function handleSubmit(event) {
     if (hash !== state.security.pinHash) return notice('That owner passphrase does not match this browser profile.', 'error');
     setOwnerSession(true); notice('Owner Studio unlocked.'); render(); return;
   }
+  if (form.matches('[data-pocket-places-form]')) { event.preventDefault(); searchPocketPlaces(); return; }
   if (form.id === 'record-form') { event.preventDefault(); await handleRecordForm(form); return; }
   if (form.id === 'brand-form') {
     event.preventDefault(); state.brand = { ...state.brand, ...Object.fromEntries(new FormData(form).entries()) }; await save(); notice('Brand settings saved locally.'); render();
@@ -501,6 +539,51 @@ function updatePocketCalculators() {
   if (dilutionOutput) dilutionOutput.textContent = ounces > 0 && gallons > 0 ? `${(ounces * gallons).toFixed(1)} oz concentrate for ${gallons} mixed gallon${gallons === 1 ? '' : 's'}.` : 'Enter the label ratio and number of gallons.';
 }
 
+function requestPocketLocation() {
+  if (!navigator.geolocation) return notice('This browser does not provide location access. You can still search Google Maps normally.', 'error');
+  const status = document.querySelector('[data-pocket-place-status]');
+  const detail = document.querySelector('[data-pocket-place-detail]');
+  if (status) status.textContent = 'Waiting for your location choice…';
+  if (detail) detail.textContent = 'Your browser will ask for permission. THE RIZEN does not receive or store the location.';
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      pocketLocation = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+      updatePocketPlaceStatus();
+      notice('Location is ready for Google Maps during this browser session only.');
+    },
+    (error) => {
+      updatePocketPlaceStatus();
+      notice(`Location was not shared: ${error.message || 'permission was not granted'}. You can still use normal Maps search.`, 'error');
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 300000 }
+  );
+}
+
+function searchPocketPlaces() {
+  const query = document.querySelector('#pocket-places-query')?.value.trim();
+  if (!query) return notice('Type what you want to find first, such as coffee, tacos, a park, or a comic shop.', 'error');
+  const nearby = pocketLocation ? `${query} near ${pocketLocation.latitude.toFixed(5)},${pocketLocation.longitude.toFixed(5)}` : query;
+  openGoogleMaps(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nearby)}`);
+}
+
+function savePocketFavoriteList() {
+  const field = document.querySelector('#pocket-favorite-link');
+  const url = field?.value.trim() || '';
+  if (!url) {
+    try { localStorage.removeItem('rizen-pocket-google-maps-list-v1'); notice('Saved favorite-spots link cleared from this device.'); } catch { notice('This browser did not allow local list storage.', 'error'); }
+    return;
+  }
+  if (!isGoogleMapsUrl(url)) return notice('Paste a valid Google Maps or maps.app.goo.gl share link.', 'error');
+  try { localStorage.setItem('rizen-pocket-google-maps-list-v1', url); notice('Your favorite-spots link is saved only on this device.'); } catch { notice('This browser did not allow local list storage.', 'error'); }
+}
+
+function openPocketFavoriteList() {
+  const url = document.querySelector('#pocket-favorite-link')?.value.trim() || pocketFavoriteList();
+  if (!url) return notice('Paste and save your Google Maps saved-list link first.', 'error');
+  if (!isGoogleMapsUrl(url)) return notice('That is not a valid Google Maps share link.', 'error');
+  openGoogleMaps(url);
+}
+
 async function handlePocketAction(action) {
   if (action === 'screen-white') return setScreenLight('white');
   if (action === 'screen-red') return setScreenLight('red');
@@ -509,6 +592,9 @@ async function handlePocketAction(action) {
   if (action === 'timer-start') return startPocketTimer();
   if (action === 'timer-pause') return pausePocketTimer();
   if (action === 'timer-reset') return resetPocketTimer();
+  if (action === 'places-location') return requestPocketLocation();
+  if (action === 'favorite-save') return savePocketFavoriteList();
+  if (action === 'favorite-open') return openPocketFavoriteList();
   if (action === 'note-save') {
     try { localStorage.setItem('rizen-pocket-note-v1', document.querySelector('#pocket-note')?.value || ''); notice('Pocket note saved on this device.'); } catch { notice('This browser did not allow local note storage.', 'error'); }
   }
@@ -562,7 +648,7 @@ function handleKeydown(event) {
 async function boot() {
   state = await ensureState();
   render();
-  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./service-worker.js?v=public4').catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./service-worker.js?v=public5').catch(() => {});
 }
 
 document.addEventListener('submit', (event) => { handleSubmit(event).catch((error) => notice(`Save failed: ${error.message}`, 'error')); });

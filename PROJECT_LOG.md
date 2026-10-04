@@ -13,3 +13,10 @@
 
 - GitHub Pages API reports no active Pages site as of this entry; GitHub Actions cannot create one with its current token permission (`Resource not accessible by integration`).
 - A self-contained public fallback is maintained in `THE_RIZEN_LIVE.html` while GitHub Pages is fixed.
+
+## 2026-10-04 — Nearby places and open-art redesign
+
+- Added **Nearby & Favorite Spots** inside Adam's Pocket using official, user-triggered Google Maps URLs. It can request the visitor's device location only after pressing **Use my location**, then opens a Maps search near the current coordinates.
+- Added a browser-local field for the owner's Google Maps saved-list share link. The static public site does not read Google Maps Saved places, Google account data, or location history.
+- The Google Maps connector was inspected; it remains disabled. The implemented Maps URL approach requires no API key or connector and reveals no private credential in the site source.
+- Replaced the muted generated mural shell with a restored, high-resolution copy of the owner-supplied ADAN UNFILTERED desktop art. The redesign makes the artwork visible behind the full application and removes the heavy boxed-card treatment in favor of open translucent content areas.
