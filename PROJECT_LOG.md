@@ -20,3 +20,8 @@
 - Added a browser-local field for the owner's Google Maps saved-list share link. The static public site does not read Google Maps Saved places, Google account data, or location history.
 - The Google Maps connector was inspected; it remains disabled. The implemented Maps URL approach requires no API key or connector and reveals no private credential in the site source.
 - Replaced the muted generated mural shell with a restored, high-resolution copy of the owner-supplied ADAN UNFILTERED desktop art. The redesign makes the artwork visible behind the full application and removes the heavy boxed-card treatment in favor of open translucent content areas.
+- Validated the Google Maps search handoff, browser-local favorite-list save/clear behavior, JavaScript syntax, and the self-contained public fallback. The active GitHub Pages address still returns 404 because a Pages site has not been created for the repository yet.
+
+### Next launch step
+
+- In GitHub **Settings → Pages**, choose **Deploy from a branch**, select **main** and **/(root)**, then save. This will activate the permanent `privateaz9898-tech.github.io/the-rizen-public-site` address directly from the published static site source.
