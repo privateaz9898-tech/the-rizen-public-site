@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">THE RIZEN original crown</title>
+  <desc id="desc">An angular black, chrome, and red crown mark.</desc>
+  <defs>
+    <linearGradient id="chrome" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#f5f5f7"/><stop offset=".35" stop-color="#5b5d67"/><stop offset=".62" stop-color="#f5f5f7"/><stop offset="1" stop-color="#2a2b32"/></linearGradient>
+    <linearGradient id="red" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#ff5769"/><stop offset="1" stop-color="#a3091b"/></linearGradient>
+  </defs>
+  <path fill="#09090b" stroke="url(#chrome)" stroke-width="10" stroke-linejoin="round" d="M28 201 42 64l48 58L128 30l38 92 48-58 14 137H28Z"/>
+  <path fill="url(#red)" d="m45 179 7-75 39 49 37-89 37 89 39-49 7 75H45Z"/>
+  <path fill="#09090b" d="M48 184h160l-10 29H58l-10-29Z"/>
+  <path fill="url(#chrome)" d="M62 189h132l-5 12H67l-5-12Z"/>
+  <circle cx="128" cy="170" r="13" fill="#f5f5f7"/><circle cx="128" cy="170" r="7" fill="#ed2438"/>
+</svg>

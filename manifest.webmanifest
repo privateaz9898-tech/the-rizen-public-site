@@ -1,0 +1,12 @@
+{
+  "name": "THE RIZEN — Local Preview",
+  "short_name": "THE RIZEN",
+  "description": "Private local creator command center for ADAN UNFILTERED.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#09090B",
+  "theme_color": "#ED2438",
+  "icons": [
+    {"src": "./assets/rizen-crown.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+  ]
+}
